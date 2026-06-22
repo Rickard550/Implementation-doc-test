@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Implementation Documents · May–Jun 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #f5f4f0;
+    --surface:   #ffffff;
+    --border:    #d8d5cc;
+    --border2:   #ece9e2;
+    --text:      #1a1917;
+    --muted:     #72706a;
+    --accent:    #1a4fff;
+    --green:     #0a7a45;
+    --green-bg:  #e6f4ed;
+    --amber:     #92600a;
+    --amber-bg:  #fef3dc;
+    --purple:    #4c2eb5;
+    --purple-bg: #f0eeff;
+    --new-bg:    #fffbe6;
+    --new-border:#f5d96b;
+    --stripe:    #faf9f6;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    padding: 48px 40px 64px;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 36px;
+    padding-bottom: 28px;
+    border-bottom: 2px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .header-left h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    line-height: 1.15;
+  }
+
+  .header-left .sub {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .new-pill {
+    display: inline-flex;
+    align-items: center;
+    background: var(--new-bg);
+    border: 1px solid var(--new-border);
+    color: #7a5900;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .stats {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    text-align: center;
+    min-width: 80px;
+  }
+
+  .stat-card .n {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+    line-height: 1;
+  }
+
+  .stat-card .l {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+  }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead tr { background: #1a1917; }
+
+  thead th {
+    padding: 13px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #b8b5ae;
+    white-space: nowrap;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  thead th:first-child { color: #6b9fff; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border2);
+    transition: background 0.1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:nth-child(even) { background: var(--stripe); }
+  tbody tr:hover { background: #eef2ff; }
+  tbody tr.today-row { background: var(--new-bg); }
+  tbody tr.today-row:hover { background: #fff3b0; }
+
+  td { padding: 14px 16px; vertical-align: top; line-height: 1.55; }
+
+  td.date {
+    white-space: nowrap;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 500;
+    min-width: 115px;
+  }
+
+  td.date .today-tag {
+    display: block;
+    margin-top: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #7a5900;
+    background: var(--new-bg);
+    border: 1px solid var(--new-border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    width: fit-content;
+  }
+
+  td.subject { min-width: 240px; max-width: 300px; }
+
+  .ticket-tag {
+    display: inline-block;
+    background: #eef2ff;
+    color: var(--accent);
+    border: 1px solid #c5d1ff;
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    padding: 2px 7px;
+    margin-bottom: 5px;
+    letter-spacing: 0.04em;
+  }
+
+  .subject-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    display: block;
+  }
+
+  td.reporter { min-width: 150px; }
+  .reporter-name { font-weight: 600; color: var(--text); display: block; }
+  .reporter-email {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    display: block;
+    margin-top: 2px;
+  }
+
+  td.summary {
+    font-size: 12.5px;
+    color: #4a4845;
+    min-width: 220px;
+    max-width: 320px;
+    line-height: 1.6;
+  }
+
+  td.approval { min-width: 170px; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .badge::before {
+    content: '';
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+
+  .badge.approved   { background: var(--green-bg);  color: var(--green);  }
+  .badge.pending    { background: var(--amber-bg);  color: var(--amber);  }
+  .badge.it-signoff { background: var(--purple-bg); color: var(--purple); }
+
+  .approver {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .section-divider td {
+    background: #1a1917;
+    color: #6b9fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 7px 16px;
+  }
+
+  .page-footer {
+    margin-top: 20px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="header-left">
+    <h1>Implementation Documents <span class="new-pill">Updated 18 Jun 2026</span></h1>
+    <div class="sub">Outlook · 01 May 2026 → 18 Jun 2026 · subject contains "Implementation Document"</div>
+  </div>
+  <div class="stats">
+    <div class="stat-card"><div class="n">14</div><div class="l">Total</div></div>
+    <div class="stat-card"><div class="n">10</div><div class="l">Approved</div></div>
+    <div class="stat-card"><div class="n">3</div><div class="l">Pending</div></div>
+    <div class="stat-card"><div class="n">1</div><div class="l">Superseded</div></div>
+  </div>
+</header>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Subject Line</th>
+        <th>Reporter</th>
+        <th>Summary</th>
+        <th>Approval</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- ── 12 JUN ── -->
+      <tr class="section-divider"><td colspan="5">▸ 12 June 2026</td></tr>
+
+      <tr class="today-row">
+        <td class="date">12 Jun 2026<span class="today-tag">New</span></td>
+        <td class="subject">
+          <span class="ticket-tag">ZARONIA Ph-3</span>
+          <span class="subject-title">Implementation Document and Access Request for the ZARONIA Phase-3 Deployment</span>
+        </td>
+        <td class="reporter">
+          <span class="reporter-name">Dinesh Sathar</span>
+          <span class="reporter-email">dinesh@elenjical.com</span>
+        </td>
+        <td class="summary">Implementation document and CONF_IMPL access request for the ZARONIA Phase-3 Deployment. Alisha granted access promptly; Dinesh confirmed deployment completion and requested access revocation same day.</td>
+        <td class="approval">
+          <span class="badge approved">Approved</span>
+          <span class="approver">Alisha D'sa</span>
+        </td>
+      </tr>
+
+      <!-- ── 05 JUN ── -->
+      <tr class="section-divider"><td colspan="5">▸ 05 June 2026</td></tr>
+
+      <tr>
+        <td class="date">05 Jun 2026</td>
+        <td class="subject">
+          <span class="ticket-tag">#858</span>
+          <span class="subject-title">Implementation document for ticket 858 — Rate type for MO_Balance view</span>
+        </td>
+        <td class="reporter">
+          <span class="reporter-name">Rickard Swartz</span>
+          <span class="reporter-email">Rickard.Swartz@elenjical.com</span>
+        </td>
+        <td class="summary">Follow-up to ticket #854. Resolved a reporting issue in the MO_Balance Sheet Effective Interest Rate calculation. New implementation document submitted with attachments; awaiting approval.</td>
+        <td class="approval">
+          <span class="badge pending">Awaiting Approval</span>
+          <span class="approver">Not yet confirmed</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="date">05 Jun 2026</td>
+        <td class="subject">
+          <span class="ticket-tag">MP1475</span>
+          <span class="subject-title">MP1475 Implementation Document — Stale Data DAG Task Addition</span>
+        </td>
+        <td class="reporter">
+          <span class="reporter-name">Ethan Wilson</span>
+          <span class="reporter-email">ethan.wilson@elenjical.com</span>
+        </td>
+        <td class="summary">Implementation document for MP1475 — addition of the stale data DAG task. IT sign-off folder marked "NotRequired.txt". Approved by Naveen same morning.</td>
+        <td class="approval">
+          <span class="badge approved">Approved</span>
+          <span class="approver">Naveen Kumpbuckal</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="date">05 Jun 2026</td>
+        <td class="subject">
+          <span class="ticket-tag">JIBAR / ZARONIA</span>
+          <span class="subject-title">Implementation Document for JIBAR Exposure Report — ZARONIA</span>
+        </td>
+        <td class="reporter">
+          <span class="reporter-name">Dinesh Sathar</span>
+          <span class="reporter-email">dinesh@elenjical.com</span>
+        </td>
+        <td class="summary">Implementation document for the JIBAR Exposure Report in the context of ZARONIA migration. Submitted with attachments; no approval reply found to date.</td>
+        <td class="approval">
+          <span class="badge pending">Awaiting Approval</span>
+          <span class="approver">Not yet confirmed</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="date">05 Jun 2026</td>
+        <td class="subject">
+          <span class="ticket-tag">MP1582</span>
+          <span class="subject-title">RE: MP1582 Implementation Document — Stale Data Scripts</span>
+        </td>
+        <td class="reporter">
+          <span class="reporter-name">Ethan Wilson</span>
+          <span class="reporter-email">ethan.wilson@elenjical.com</span>
+        </td>
+        <td class="summary">Naveen's approval reply for Ethan's MP1582 doc originally submitted 04 Jun. IT sign-off marked "NotRequired.txt".</td>
+        <td class="approval">
+          <span class="badge approved">Approved</span>
+          <span class="approver">Naveen Kumpbuckal</span>
+        </td>
+      </tr>
+
+      <!-- ── 04 JUN ── -->
+      <tr class="section-divider"><td colspan="5">▸ 04 June 2026</td></tr>
+
+      <tr>
+        <td class="date">04 Jun 2026</td>
+        <td class="subject">
+          <span class="ticket-tag">MG-870</span>
+          <span class="subject-title">MG Support 870 — Implementation Doc (New EOD Tasks / DB Copy)</span>
+        </td>
+        <td class="reporter">
+          <span class="reporter-name">Johan Welman</span>
+          <span class="reporter-email">johan.welman@elenjical.com</span>
+        </td>
+        <td class="summary">Implementation doc and supporting pull requests for new EOD tasks to copy the database. No approval reply found to date.</td>
+        <td class="approval">
+          <span class="badge pending">Awaiting Approval</span>
+          <span class="approver">Not yet confirmed</span>
+        </td>
+      </tr>
+
+      <!-- ── MAY ── -->
+      <tr class="section-divider"><td colspan="5">▸ May 2026</td></tr>
+
+      <tr>
+        <td class="date">28 May 2026</td>
+        <td class="subject">
+          <span class="ticket-tag">#857</span>
+          <span class="subject-title">Implementation Document for #857 — ERM_DV01_Limit Report not picking totals for each bucket correctly</span>
+        </td>
+        <td class="reporter">
+          <span class="reporter-name">Dinesh Sathar</span>
+          <span class="reporter-email">dinesh@elenjical.com</span>
+        </td>
+        <td class="summary">Bug fix for ERM_DV01_Limit Report where bucket totals were not calculated correctly. Alisha D'sa added to thread (++Implementation Doc). Dinesh confirmed completion and requested access revocation.</td>
+        <td class="approval">
+          <span class="badge approved">Approved</span>
+          <span class="approver">Alisha D'sa</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="date">28 May 2026</td>
+        <td class="subject">
+          <span class="ticket-tag">#854</span>
+          <span class="subject-title">Implementation document: 854 — Rate type for MO_Balance view</span>
+        </td>
+        <td class="reporter">
+          <span class="reporter-name">Rickard Swartz</span>
+          <span class="reporter-email">Rickard.Swartz@elenjical.com</span>
+        </td>
+        <td class="summary">Initial implementation document for rate type on the MO_Balance view. Superseded by ticket #858 (resubmitted 05 Jun with resolved approach). No direct approval reply found.</td>
+        <td class="approval">
+          <span class="badge pending">Superseded by #858</span>
+          <span class="approver">See ticket #858</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="date">20 May 2026</td>
+        <td class="subject">
+          <span class="ticket-tag">#836</span>
+          <span class="subject-title">Implementation Document: 836 — Incorrect GIS_INSTRUMENTCODE in the TradeListings Report</span>
+        </td>
+        <td class="reporter">
+          <span class="reporter-name">Sri Varshini Arram</span>
+          <span class="reporter-email">Srivarshini.Arram@elenjical.com</span>
+        </td>
+        <td class="summary">Fix for incorrect GIS_INSTRUMENTCODE in the TradeListings report. Updated doc resubmitted 21 May. Explicitly approved for release 22 May; CONF_IMPL prod access granted then revoked on completion.</td>
+        <td class="approval">
+          <span class="badge approved">Approved for Release</span>
+          <span class="approver">Naveen Kumpbuckal</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="date">20 May 2026</td>
+        <td class="subject">
+          <span class="ticket-tag">MP-1444</span>
+          <span class="subject-title">Implementation Document: [MP-1444] Check Deliverable Scanner Template</span>
+        </td>
+        <td class="reporter">
+          <span class="reporter-name">Sri Varshini Arram</span>
+          <span class="reporter-email">Srivarshini.Arram@elenjical.com</span>
+        </td>
+        <td class="summary">Implementation document for the Check Deliverable Scanner Template feature. Submitted with attachments; CONF_IMPL prod access approved via reply thread.</td>
+        <td class="approval">
+          <span class="badge approved">Approved</span>
+          <span class="approver">Naveen Kumpbuckal</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="date">20 May 2026</td>
+        <td class="subject">
+          <span class="ticket-tag">MXMT-4415</span>
+          <span class="subject-title">Implementation Document: MXMT-4415 — Incorrect Instrument Code for R2_1 Instruments Daily Report</span>
+        </td>
+        <td class="reporter">
+          <span class="reporter-name">Sri Varshini Arram</span>
+          <span class="reporter-email">Srivarshini.Arram@elenjical.com</span>
+        </td>
+        <td class="summary">Fix for incorrect instrument codes in the R2_1 Instruments Daily Report. Document resubmitted same day after reviewer comments; Naveen confirmed acceptance.</td>
+        <td class="approval">
+          <span class="badge approved">Approved</span>
+          <span class="approver">Naveen Kumpbuckal</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="date">14 May 2026</td>
+        <td class="subject">
+          <span class="ticket-tag">Dead FX Trades</span>
+          <span class="subject-title">Implementation Document: Dead Fx Trades</span>
+        </td>
+        <td class="reporter">
+          <span class="reporter-name">Maya Cohen</span>
+          <span class="reporter-email">maya@elenjical.com</span>
+        </td>
+        <td class="summary">First submission of the Dead FX Trades implementation document. Revised and resubmitted 20 May and 21 May after reviewer feedback. CONF_IMPL prod access granted then revoked on completion.</td>
+        <td class="approval">
+          <span class="badge approved">Approved</span>
+          <span class="approver">Naveen Kumpbuckal</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="date">08 May 2026</td>
+        <td class="subject">
+          <span class="ticket-tag">#805</span>
+          <span class="subject-title">Implementation Document for #805 — Python Script for Recon of Net Cash &amp; MV of Collateral Deliverables (R080 &amp; R081)</span>
+        </td>
+        <td class="reporter">
+          <span class="reporter-name">Dinesh Sathar</span>
+          <span class="reporter-email">dinesh@elenjical.com</span>
+        </td>
+        <td class="summary">Python reconciliation script for net cash and market value of collateral deliverables across R080 and R081 reports. Submitted with attachments; approved by Naveen.</td>
+        <td class="approval">
+          <span class="badge approved">Approved</span>
+          <span class="approver">Naveen Kumpbuckal</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="date">08 May 2026</td>
+        <td class="subject">
+          <span class="ticket-tag">MP-1611</span>
+          <span class="subject-title">Implementation Document for MP-1611 — Python Script for R081_MO_Cash_Ladder report</span>
+        </td>
+        <td class="reporter">
+          <span class="reporter-name">Dinesh Sathar</span>
+          <span class="reporter-email">dinesh@elenjical.com</span>
+        </td>
+        <td class="summary">Python script implementation for the R081 MO Cash Ladder report. Submitted with attachments; Naveen acknowledged and approved via reply.</td>
+        <td class="approval">
+          <span class="badge approved">Approved</span>
+          <span class="approver">Naveen Kumpbuckal</span>
+        </td>
+      </tr>
+
+    </tbody>
+  </table>
+</div>
+
+<footer class="page-footer">
+  <span>Source: Outlook · Rickard.Swartz@elenjical.com · Microsoft 365</span>
+  <span>Last updated: 18 Jun 2026 · 14 records · threads de-duplicated · sorted newest first</span>
+</footer>
+
+</body>
+</html>
